@@ -61,8 +61,12 @@ namespace NewsletterProvider.Functions
                             Podcasts = subscriber.Podcasts
                         };
 
+                        _context.Subscribers.Add(subscriberEntity);
+
                         try
                         {
+                            await _context.SaveChangesAsync();
+
                             using var http = new HttpClient();
                             StringContent content = new StringContent(JsonConvert.SerializeObject(new { Email = subscriberEntity.Email }), Encoding.UTF8, "application/json");
                             var response = await http.PostAsync("https://silicon-newsletterprovider.azurewebsites.net/api/subscribe", content);
