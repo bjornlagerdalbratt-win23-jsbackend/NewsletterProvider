@@ -8,85 +8,83 @@ using Microsoft.Extensions.Logging;
 using NewsletterProvider.Models;
 using Newtonsoft.Json;
 using System.Text;
-using System.Text.Json.Serialization;
 
-namespace NewsletterProvider.Functions
+namespace NewsletterProvider.Functions;
+
+public class Subscribe(ILogger<Subscribe> logger, DataContext context)
 {
-    public class Subscribe(ILogger<Subscribe> logger, DataContext context)
-    {
-        private readonly ILogger<Subscribe> _logger = logger;
-        private readonly DataContext _context = context;
+    private readonly ILogger<Subscribe> _logger = logger;
+    private readonly DataContext _context = context;
 
-        [Function("Subscribe")]
-        public async Task <IActionResult> Run([HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequest req)
+    [Function("Subscribe")]
+    public async Task <IActionResult> Run([HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequest req)
+    {
+
+        string body = null!;
+
+        try
+        {
+            body = await new StreamReader(req.Body).ReadToEndAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"StreamReader :: {ex.Message}");
+        }
+
+        if (body != null)
         {
 
-            string body = null!;
+            SubscribeRequest subscriber = null!;
 
             try
             {
-                body = await new StreamReader(req.Body).ReadToEndAsync();
+                subscriber = JsonConvert.DeserializeObject<SubscribeRequest>(body)!;
             }
             catch (Exception ex)
             {
-                _logger.LogError($"StreamReader :: {ex.Message}");
+                _logger.LogError($"JsonConvert.DeserializeObject<UserRegistrationRequest> :: {ex.Message}");
             }
 
-            if (body != null)
+            if (subscriber != null && !string.IsNullOrEmpty(subscriber.Email))
             {
-
-                SubscribeRequest subscriber = null!;
-
-                try
+                if (!await _context.Subscribers.AnyAsync(x => x.Email == subscriber.Email)) 
                 {
-                    subscriber = JsonConvert.DeserializeObject<SubscribeRequest>(body)!;
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError($"JsonConvert.DeserializeObject<UserRegistrationRequest> :: {ex.Message}");
-                }
-
-                if (subscriber != null && !string.IsNullOrEmpty(subscriber.Email))
-                {
-                    if (!await _context.Subscribers.AnyAsync(x => x.Email == subscriber.Email)) 
+                    var subscriberEntity = new SubscriberEntity
                     {
-                        var subscriberEntity = new SubscriberEntity
-                        {
-                            Email = subscriber.Email,
-                            DailyNewsletter = subscriber.DailyNewsletter,
-                            AdvertisingUpdates = subscriber.AdvertisingUpdates,
-                            WeekInReview = subscriber.WeekInReview,
-                            EventUpdates = subscriber.EventUpdates,
-                            StartupsWeekly = subscriber.StartupsWeekly,
-                            Podcasts = subscriber.Podcasts
-                        };
+                        Email = subscriber.Email,
+                        DailyNewsletter = subscriber.DailyNewsletter,
+                        AdvertisingUpdates = subscriber.AdvertisingUpdates,
+                        WeekInReview = subscriber.WeekInReview,
+                        EventUpdates = subscriber.EventUpdates,
+                        StartupsWeekly = subscriber.StartupsWeekly,
+                        Podcasts = subscriber.Podcasts
+                    };
 
-                        _context.Subscribers.Add(subscriberEntity);
+                    _context.Subscribers.Add(subscriberEntity);
 
-                        try
-                        {
-                            await _context.SaveChangesAsync();
-
-                            using var http = new HttpClient();
-                            StringContent content = new StringContent(JsonConvert.SerializeObject(new { Email = subscriberEntity.Email }), Encoding.UTF8, "application/json");
-                            var response = await http.PostAsync("https://silicon-newsletterprovider.azurewebsites.net/api/subscribe", content);
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger.LogError($"http.PostAsync :: {ex.Message}");
-                        }
-
-                        return new OkResult();
-                    }
-                    else
+                    try
                     {
-                        return new ConflictResult();
+                        await _context.SaveChangesAsync();
+
+                        using var http = new HttpClient();
+                        StringContent content = new StringContent(JsonConvert.SerializeObject(new { Email = subscriberEntity.Email }), Encoding.UTF8, "application/json");
+                        var response = await http.PostAsync("https://silicon-newsletterprovider.azurewebsites.net/api/subscribe", content);
                     }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError($"http.PostAsync :: {ex.Message}");
+                    }
+
+                    return new OkResult();
+                }
+                else
+                {
+                    return new ConflictResult();
                 }
             }
-
-            return new BadRequestResult();
-
         }
+
+        return new BadRequestResult();
+
     }
 }
