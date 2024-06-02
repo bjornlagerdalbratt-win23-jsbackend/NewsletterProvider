@@ -14,11 +14,11 @@ public class GetOneSubscriber(ILogger<GetOneSubscriber> logger, DataContext cont
     private readonly DataContext _context = context;
 
     [Function("GetOneSubscriber")]
-    public async Task <IActionResult> Run([HttpTrigger(AuthorizationLevel.Function, "get", Route = "subscriber{id}")] HttpRequest req, string id)
+    public async Task <IActionResult> Run([HttpTrigger(AuthorizationLevel.Function, "get", Route = "editsubscriber{id}")] HttpRequest req, string id)
     {
         try
         {
-            var subscriber = await _context.Subscribers.FirstOrDefaultAsync(x => x.Email == id);
+            var subscriber = await _context.Subscribers.FirstOrDefaultAsync(x => x.Id == id);
             if (subscriber != null)
             {
                 return new OkObjectResult(subscriber);
