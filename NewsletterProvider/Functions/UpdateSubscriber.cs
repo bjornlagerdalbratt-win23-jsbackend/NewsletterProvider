@@ -7,7 +7,6 @@ using Microsoft.Extensions.Logging;
 using NewsletterProvider.Models;
 using Newtonsoft.Json;
 using System.Text;
-using static Microsoft.ApplicationInsights.MetricDimensionNames.TelemetryContext;
 
 namespace NewsletterProvider.Functions
 {
