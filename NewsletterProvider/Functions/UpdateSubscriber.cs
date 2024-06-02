@@ -11,16 +11,10 @@ using static Microsoft.ApplicationInsights.MetricDimensionNames.TelemetryContext
 
 namespace NewsletterProvider.Functions
 {
-    public class UpdateSubscriber
+    public class UpdateSubscriber(ILogger<UpdateSubscriber> logger, DataContext context)
     {
-        private readonly ILogger<UpdateSubscriber> _logger;
-        private readonly DataContext _context;
-
-        public UpdateSubscriber(ILogger<UpdateSubscriber> logger, DataContext context)
-        {
-            _logger = logger;
-            _context = context;
-        }
+        private readonly ILogger<UpdateSubscriber> _logger = logger;
+        private readonly DataContext _context = context;
 
         [Function("UpdateSubscriber")]
         public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Function, "put", Route = "subscriber/{email}")] HttpRequest req, string email)
