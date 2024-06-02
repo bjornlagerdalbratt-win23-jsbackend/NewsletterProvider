@@ -61,25 +61,8 @@ namespace NewsletterProvider.Functions
             subscriber.StartupsWeekly = subscriberUpdate.StartupsWeekly;
             subscriber.Podcasts = subscriberUpdate.Podcasts;
 
-            try
-            {
-                await _context.SaveChangesAsync();
-
-                using var http = new HttpClient();
-                StringContent content = new StringContent(JsonConvert.SerializeObject(new { Email = subscriber.Email }), Encoding.UTF8, "application/json");
-                var response = await http.PostAsync("https://silicon-newsletterprovider.azurewebsites.net/api/subscriber/update", content);
-
-                if (!response.IsSuccessStatusCode)
-                {
-                    _logger.LogError($"External update API call failed with status code {response.StatusCode}");
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"http.PostAsync :: {ex.Message}");
-                return new StatusCodeResult(StatusCodes.Status500InternalServerError);
-            }
-
+            _context.Subscribers.Update(subscriber);
+            await _context.SaveChangesAsync();
             return new OkObjectResult(subscriber);
         }
     }
