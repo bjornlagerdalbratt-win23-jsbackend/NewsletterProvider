@@ -14,7 +14,7 @@ public class GetOneSubscriber(ILogger<GetOneSubscriber> logger, DataContext cont
     private readonly DataContext _context = context;
 
     [Function("GetOneSubscriber")]
-    public async Task <IActionResult> Run([HttpTrigger(AuthorizationLevel.Function, "get", Route = "subscriber/{id}")] HttpRequest req, string id)
+    public async Task <IActionResult> Run([HttpTrigger(AuthorizationLevel.Function, "get", Route = "subscriber{id}")] HttpRequest req, string id)
     {
         try
         {
